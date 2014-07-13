@@ -4,10 +4,9 @@
 #include <stdio.h>
 
 CMemPool::CMemPool(int blockSize,int blockCount)
-:BlockSize(blockSize),BlockCount(blockCount),m_BlockCount(0)
+:BlockSize(blockSize),BlockCount(blockCount),m_BlockCount(0),CreatedFlag(false)
 {
-    FreeListHead = NULL;
-	FreeListTrail = NULL;
+
 }
 CMemPool::~CMemPool()
 {
@@ -16,7 +15,7 @@ CMemPool::~CMemPool()
 //creat the pool according to the param
 bool CMemPool::CreatPool()
 {
-	if(BlockSize <= 0 || BlockCount <= 0 || FreeListHead != NULL)
+	if(BlockSize <= 0 || BlockCount <= 0 || CreatedFlag)
 	{
 		return false;
 	}
@@ -25,45 +24,51 @@ bool CMemPool::CreatPool()
 	ContnBlockList = GetContnBlock(BlockSize,BlockCount);
 	if(NULL == ContnBlockList)
 	{
+		printf("get continue block failed");
 		return false;
 	}
-	FreeListHead = ContnBlockList->pMemBlockList;
-	FreeListTrail = FreeListHead;
+	MemBlock *block = ContnBlockList->pMemBlockList, *tmp = NULL;
+	while(block != NULL)
+	{
+		printf("tmp=%d\n",tmp);
+		tmp = block->pNext;
+		FreeList.PushTrail(block);
+		block = tmp;
+		printf("tmp=%d\n",tmp);
+	}
+
     m_BlockCount += BlockCount;
+	CreatedFlag = true;
 	return true;
 }
-MemBlock* CMemPool::GetBlock()
+char* CMemPool::GetBlock()
 {
-	MemBlock* pTmp, *pRet;
-	if(FreeListHead == NULL)
+	MemBlock *pRet;
+	pRet = FreeList.GetBlockHead();
+	if(pRet == NULL)
 	{
+		printf("get block failed");
 		return NULL;
 	}
 
-	pTmp = FreeListHead->pNext;
-	pRet = FreeListHead;
-	pRet->pNext = NULL;
-	FreeListHead = pTmp;
-
-	return pRet;	
+	UsedList.PushTrail(pRet);
+	memset(pRet->pBlock, 0, BlockSize); 
+	return pRet->pBlock;	
 }
 
-bool CMemPool::FreeBlock(MemBlock *Block)
+bool CMemPool::FreeBlock(char *addr)
 {
+	MemBlock *block = UsedList.DeletBlockWithAddr(addr);
+	if(NULL == block)
+	{
+		printf("FreeBlock error: get block null");
+		return false;
+	}
 	//init the block
-	Block->pNext = NULL;
-	memset(Block->pBlock, 0, BlockSize);
-	if(NULL == FreeListTrail)
-	{
-		FreeListTrail = Block;
-		FreeListHead = FreeListTrail;
-	}
-	else
-	{
-		FreeListTrail->pNext = Block;
-		FreeListTrail = Block;
-	}
+	block->pNext = NULL;
+	memset(block->pBlock, 0, BlockSize);
 
+	FreeList.PushTrail(block);
 	return true;
 }
 
@@ -80,7 +85,7 @@ void CMemPool::FreeMem()
 		delete pTmp;
 		
 		pTmp = pConBlockNext;
-	}	
+	}
 }
 ContnBlockInf* CMemPool::GetContnBlock(int blockSize, int blockCount)
 {
@@ -123,8 +128,14 @@ ContnBlockInf* CMemPool::GetContnBlock(int blockSize, int blockCount)
         {
 		    pContnBlock->pMemBlockList[i].pNext = &(pContnBlock->pMemBlockList[i+1]);
         }
+		printf("next is=%d\n", pContnBlock->pMemBlockList[i].pNext);
     }
+	MemBlock *tmp = pContnBlock->pMemBlockList;
+	while(tmp != NULL)
+	{
+		printf("tmp = %d\n", tmp);
+		tmp = tmp->pNext;
+	}
 
 	return pContnBlock;	
 }
-
