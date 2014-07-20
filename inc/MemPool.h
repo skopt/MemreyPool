@@ -14,7 +14,7 @@ struct ContnBlockInf
 class CMemPool
 {
 public:
-    CMemPool(int blockSize, int blockCount);
+    CMemPool(int blockSize, int blockCount, int step);
 	~CMemPool();
 	bool CreatPool();
 	char* GetBlock();
@@ -22,6 +22,7 @@ public:
 private:
     virtual void FreeMem();
 	ContnBlockInf* GetContnBlock(int blockSize, int blockCount);
+	bool ExtendPool(int size, int count);
 public:
 	int m_BlockCount;//current block size
 
@@ -29,6 +30,7 @@ public:
 private:
 	long BlockSize;
 	long BlockCount;
+	int GrowStep;
 	bool CreatedFlag;
 	ContnBlockInf *ContnBlockList;
 	CMemBlockListManager FreeList;           

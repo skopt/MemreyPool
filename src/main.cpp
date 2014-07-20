@@ -4,16 +4,19 @@
 
 int main()
 {
-    CMemPool TestPool(100, 3);
+    CMemPool TestPool(100, 3, 2);
 	TestPool.CreatPool();
-	char *pTmp;
-	for(int i = 0; i < 3; i++)
-	{
-		pTmp = TestPool.GetBlock();
-		if(pTmp != NULL)
-		    printf("get memery %d, dest=%02x\n", i, pTmp);
-		else
-			printf("get error\n");
-	}
+	char *pTmp0,*pTmp1,*pTmp2,*pTmp3;
+	pTmp0 = TestPool.GetBlock();
+	pTmp1 = TestPool.GetBlock();
+	pTmp2 = TestPool.GetBlock();
+	pTmp3 = TestPool.GetBlock();
+
+	TestPool.FreeBlock(pTmp3);
+	TestPool.FreeBlock(pTmp1);
+	TestPool.FreeBlock(pTmp0);
+	TestPool.FreeBlock(pTmp2);
+	
+	
 	return 1;
 }

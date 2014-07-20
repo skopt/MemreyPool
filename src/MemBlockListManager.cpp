@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define LogE printf
+
 CMemBlockListManager::CMemBlockListManager()
 :m_BlockCount(0)
 {
@@ -17,6 +19,7 @@ bool CMemBlockListManager::PushHead(MemBlock *pBlock)
 {	
 	if(NULL == pBlock)
 	{
+		LogE("PushHead: param is null");
 		return false;
 	}
 
@@ -37,6 +40,7 @@ bool CMemBlockListManager::PushTrail(MemBlock *pBlock)
 {
 	if(NULL == pBlock)
 	{
+		LogE("PushHead: param is null");
 		return false;
 	}
 
@@ -49,17 +53,7 @@ bool CMemBlockListManager::PushTrail(MemBlock *pBlock)
 	{
 		pListTrail->pNext = pBlock;
 		pListTrail = pBlock;
-	}
-
-	//test
-	MemBlock *tmp;
-	tmp = pListHead;
-	while(tmp != NULL)
-	{
-		printf("push trailed:%d\n",tmp);
-		tmp = tmp->pNext;
-	}
-
+	}	
 	pListTrail->pNext = NULL;//reinit
 	return true;
 }
@@ -68,7 +62,7 @@ MemBlock *CMemBlockListManager::GetBlockHead()
 	MemBlock *pRet = NULL;
 	if(NULL == pListHead)
 	{
-		printf("getBlockHead,Head is null\n");
+		LogE("getBlockHead,Head is null\n");
         return NULL;
 	}
 
@@ -96,28 +90,40 @@ MemBlock* CMemBlockListManager::AddrToBlock(char *addr)
 }
 MemBlock* CMemBlockListManager::DeletBlockWithAddr(char *addr)
 {
-	MemBlock *tmp = NULL, *front = pListHead;
-	if(pListHead != NULL && pListHead->pBlock != NULL && pListHead->pBlock == addr)
+	MemBlock *tmp = NULL, *front = NULL;
+	if(NULL == addr || NULL == pListHead)
 	{
-		tmp = pListHead;
-		pListHead = pListHead->pNext;
-		return tmp;
+		LogE("DeletBlockWithAddr: param is null");
+		return NULL;
 	}
-
-    tmp = front->pNext;
-	while(tmp != NULL)
+	do
 	{
-		if(tmp->pBlock != NULL && tmp->pBlock == addr)
+		//check the head
+		if(pListHead != NULL && pListHead->pBlock != NULL && pListHead->pBlock == addr)
 		{
-			 front->pNext = tmp->pNext;
-			 return tmp;
+			tmp = pListHead;
+			pListHead = pListHead->pNext;
+			break;//tmp is return
 		}
-
-		front = tmp;
-		tmp = tmp->pNext;
-	}
-    //the addr not in the list, return NULL
-	return NULL;
+		//the others
+        front = pListHead;
+	    tmp = front->pNext;
+		while(tmp != NULL)
+		{
+			if(tmp->pBlock != NULL && tmp->pBlock == addr)
+			{
+				 front->pNext = tmp->pNext;
+				 break;//tmp is return
+			}
+			front = tmp;
+			tmp = tmp->pNext;
+		}
+	}while(0);
+	if(tmp == pListTrail)
+	{
+		pListTrail = front;
+	}    
+	return tmp;
 }
 bool CMemBlockListManager::IsEmpty()
 {
